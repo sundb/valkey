@@ -124,7 +124,7 @@ typedef struct __attribute__((__packed__)) payloadHeader {
  * we store pointers to object and string itself */
 typedef struct __attribute__((__packed__)) bulkStrRef {
     robj *obj; /* pointer to object used for reference count management */
-    sds str;   /* pointer to string to optimize memory access by I/O thread */
+    // sds str;   /* pointer to string to optimize memory access by I/O thread */
 } bulkStrRef;
 
 static void setProtocolError(const char *errstr, client *c);
@@ -720,7 +720,7 @@ static void _addBulkStrRefToBufferOrList(client *c, robj *obj) {
     /* Refcount will be decremented in write completion handler by the main thread */
     incrRefCount(obj);
 
-    bulkStrRef str_ref = {.obj = obj, .str = obj->ptr};
+    bulkStrRef str_ref = {.obj = obj};
     if (!_addBulkStrRefToBuffer(c, (void *)&str_ref, sizeof(str_ref))) {
         _addBulkStrRefToToList(c, (void *)&str_ref, sizeof(str_ref));
     }
@@ -2482,7 +2482,7 @@ static void addPlainBufferToReplyIOV(char *buf, size_t buf_len, replyIOV *reply,
 static void addBulkStringToReplyIOV(char *buf, size_t buf_len, replyIOV *reply, bufWriteMetadata *metadata) {
     bulkStrRef *str_ref = (bulkStrRef *)buf;
     while (buf_len > 0 && !reply->limit_reached) {
-        size_t str_len = sdslen(str_ref->str);
+        size_t str_len = sdslen(str_ref->obj->ptr);
 
         /* RESP encodes bulk strings as $<length>\r\n<data>\r\n */
         char *prefix = reply->prefixes[reply->prfxcnt];
@@ -2495,7 +2495,7 @@ static void addBulkStringToReplyIOV(char *buf, size_t buf_len, replyIOV *reply, 
         addPlainBufferToReplyIOV(reply->prefixes[reply->prfxcnt], num_len + 3, reply, metadata);
         /* Increment prfxcnt only if prefix was added to reply in this writevToClient invocation */
         if (reply->iovcnt > cnt) reply->prfxcnt++;
-        addPlainBufferToReplyIOV(str_ref->str, str_len, reply, metadata);
+        addPlainBufferToReplyIOV(str_ref->obj->ptr, str_len, reply, metadata);
         addPlainBufferToReplyIOV(reply->crlf, 2, reply, metadata);
 
         str_ref++;
