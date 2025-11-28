@@ -800,7 +800,7 @@ struct serverObject {
                               * and most significant 16 bits access time). */
     unsigned hasexpire : 1;
     unsigned hasembkey : 1;
-    unsigned refcount : OBJ_REFCOUNT_BITS;
+    _Atomic unsigned refcount;
     void *ptr;
 };
 

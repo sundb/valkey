@@ -39,6 +39,7 @@
 #include "module.h"
 #include <math.h>
 #include <ctype.h>
+#include <stdatomic.h>
 
 #ifdef __CYGWIN__
 #define strtold(a, b) ((long double)strtod((a), (b)))
@@ -554,19 +555,23 @@ void freeStreamObject(robj *o) {
 }
 
 void incrRefCount(robj *o) {
-    if (o->refcount < OBJ_FIRST_SPECIAL_REFCOUNT) {
-        o->refcount++;
+    unsigned int refcount = atomic_load_explicit(&o->refcount, memory_order_relaxed);
+
+    if (refcount < OBJ_FIRST_SPECIAL_REFCOUNT) {
+        atomic_fetch_add_explicit(&o->refcount, 1, memory_order_relaxed);
     } else {
-        if (o->refcount == OBJ_SHARED_REFCOUNT) {
+        if (refcount == OBJ_SHARED_REFCOUNT) {
             /* Nothing to do: this refcount is immutable. */
-        } else if (o->refcount == OBJ_STATIC_REFCOUNT) {
+        } else if (refcount == OBJ_STATIC_REFCOUNT) {
             serverPanic("You tried to retain an object allocated in the stack");
         }
     }
 }
 
 void decrRefCount(robj *o) {
-    if (o->refcount == 1) {
+    unsigned int refcount = atomic_load_explicit(&o->refcount, memory_order_relaxed);
+
+    if (refcount == 1) {
         if (o->ptr != NULL) {
             switch (o->type) {
             case OBJ_STRING: freeStringObject(o); break;
@@ -581,8 +586,9 @@ void decrRefCount(robj *o) {
         }
         zfree(o);
     } else {
-        if (o->refcount <= 0) serverPanic("decrRefCount against refcount <= 0");
-        if (o->refcount != OBJ_SHARED_REFCOUNT) o->refcount--;
+        if (refcount <= 0) serverPanic("decrRefCount against refcount <= 0");
+        if (refcount != OBJ_SHARED_REFCOUNT)
+            atomic_fetch_sub_explicit(&o->refcount, 1, memory_order_relaxed);
     }
 }
 
