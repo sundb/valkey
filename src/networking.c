@@ -721,9 +721,9 @@ static void _addBulkStrRefToBufferOrList(client *c, robj *obj) {
     incrRefCount(obj);
 
     bulkStrRef str_ref = {.obj = obj};
-    if (!_addBulkStrRefToBuffer(c, (void *)&str_ref, sizeof(str_ref))) {
+    // if (!_addBulkStrRefToBuffer(c, (void *)&str_ref, sizeof(str_ref))) {
         _addBulkStrRefToToList(c, (void *)&str_ref, sizeof(str_ref));
-    }
+    // }
 }
 
 /* -----------------------------------------------------------------------------
