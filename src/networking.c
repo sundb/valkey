@@ -2684,6 +2684,7 @@ static int writevToClient(client *c) {
         }
 
         proceedToUnwritten(&reply, nwritten);
+        break;
     }
 
     c->nwritten = totwritten;
