@@ -2677,10 +2677,11 @@ static int writevToClient(client *c) {
              *
              * However if we are over the maxmemory limit we ignore that and
              * just deliver as much data as it is possible to deliver. */
-            int ignore_max_write_limit = server.maxmemory > 0 && zmalloc_used_memory() > server.maxmemory;
-            if (!ignore_max_write_limit) {
-                break;
-            }
+            // int ignore_max_write_limit = server.maxmemory > 0 && zmalloc_used_memory() > server.maxmemory;
+            // if (!ignore_max_write_limit) {
+            //     break;
+            // }
+            break;
         }
 
         proceedToUnwritten(&reply, nwritten);
