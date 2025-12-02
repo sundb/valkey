@@ -2681,6 +2681,7 @@ static int writevToClient(client *c) {
             // if (!ignore_max_write_limit) {
             //     break;
             // }
+            serverAssert(0);
             break;
         }
 
